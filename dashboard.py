@@ -286,9 +286,12 @@ with tab_brand:
     brand_rev = brand_rev.sort_values("revenue", ascending=True)
     brand_rev["pct"] = brand_rev["revenue"] / brand_rev["revenue"].sum() * 100
 
+    brand_rev["label"] = brand_rev.apply(
+        lambda r: f"Rev: {fmt_inr(r['revenue'])} | Share: {r['pct']:.1f}%", axis=1
+    )
     fig_brand = px.bar(
         brand_rev, y="brand_name", x="revenue", orientation="h",
-        text=brand_rev.apply(lambda r: f"{fmt_inr(r['revenue'])} ({r['pct']:.1f}%)", axis=1),
+        text="label",
         color="revenue",
         color_continuous_scale=["#1e3a5f", "#3b82f6", "#60a5fa"],
         labels={"revenue": "Revenue (₹)", "brand_name": "Brand"},

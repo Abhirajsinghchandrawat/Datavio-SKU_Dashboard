@@ -69,22 +69,41 @@ item_df = raw.drop_duplicates(subset=["item_id", "date"]).copy()
 # ── Sidebar Filters ─────────────────────────────────────────────────────────
 st.sidebar.markdown("## Filters")
 
+FILTER_DEFAULTS = {
+    "f_start": raw["date"].min().date(),
+    "f_end": LATEST_DATE.date(),
+    "f_brands": [],
+    "f_rating": 4.0,
+    "f_count": 200,
+    "f_growth": 20,
+    "f_skus": [],
+}
+
+def _clear_filters():
+    for k, v in FILTER_DEFAULTS.items():
+        st.session_state[k] = v
+
+if "f_start" not in st.session_state:
+    st.session_state["f_start"] = FILTER_DEFAULTS["f_start"]
+if "f_end" not in st.session_state:
+    st.session_state["f_end"] = FILTER_DEFAULTS["f_end"]
+
 col_sd, col_ed = st.sidebar.columns(2)
 with col_sd:
     start_date = st.date_input(
         "Start Date",
-        value=raw["date"].min().date(),
         min_value=raw["date"].min().date(),
         max_value=LATEST_DATE.date(),
         format="DD-MM-YYYY",
+        key="f_start",
     )
 with col_ed:
     end_date = st.date_input(
         "End Date",
-        value=LATEST_DATE.date(),
         min_value=raw["date"].min().date(),
         max_value=LATEST_DATE.date(),
         format="DD-MM-YYYY",
+        key="f_end",
     )
 date_start, date_end = pd.Timestamp(start_date), pd.Timestamp(end_date)
 if date_start > date_end:
@@ -98,24 +117,21 @@ nearest_4w = item_df["date"].unique()
 nearest_4w = pd.Timestamp(min(nearest_4w, key=lambda d: abs(d - FOUR_W_AGO)))
 
 all_brands = sorted(item_df["brand_name"].unique())
-sel_brands = st.sidebar.multiselect("Brand (leave empty = all)", all_brands, default=[])
+sel_brands = st.sidebar.multiselect("Brand (leave empty = all)", all_brands, default=[], key="f_brands")
 active_brands = sel_brands if sel_brands else all_brands
 
-rating_thresh = st.sidebar.slider("Min Rating Threshold", 1.0, 5.0, 4.0, 0.1)
-count_thresh = st.sidebar.slider("Min Rating Count Threshold", 0, 5000, 200, 50)
-growth_thresh = st.sidebar.slider("Growth % Threshold (High-Scaling)", 0, 100, 20, 5)
+rating_thresh = st.sidebar.slider("Min Rating Threshold", 1.0, 5.0, 4.0, 0.1, key="f_rating")
+count_thresh = st.sidebar.slider("Min Rating Count Threshold", 0, 5000, 200, 50, key="f_count")
+growth_thresh = st.sidebar.slider("Growth % Threshold (High-Scaling)", 0, 100, 20, 5, key="f_growth")
 
 all_skus = sorted(item_df[item_df["brand_name"].isin(active_brands)]["item_id"].unique())
-sel_skus = st.sidebar.multiselect("SKU Selector (leave empty = all)", all_skus, default=[])
+sel_skus = st.sidebar.multiselect("SKU Selector (leave empty = all)", all_skus, default=[], key="f_skus")
 active_skus = sel_skus if sel_skus else all_skus
 
 filt = item_df[(item_df["brand_name"].isin(active_brands)) & (item_df["item_id"].isin(active_skus))]
 
 st.sidebar.markdown("---")
-if st.sidebar.button("Clear Filters", use_container_width=True):
-    st.query_params.clear()
-    st.cache_data.clear()
-    st.rerun()
+st.sidebar.button("Clear Filters", use_container_width=True, on_click=_clear_filters)
 
 # ── Helper: format currency ─────────────────────────────────────────────────
 def fmt_inr(v):

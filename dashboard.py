@@ -396,9 +396,10 @@ with tab_growth:
         st.info("No SKUs meet the high-scaling criteria with current filter settings.")
 
     # Stars table: high revenue + positive growth + good rating
-    st.markdown("### Portfolio Stars (Top 10 by Revenue with Positive Growth)")
+    stars_count = min(10, len(sku_merged[sku_merged["growth_pct"] > 0]))
+    st.markdown(f"### Portfolio Stars (Top {stars_count} by Revenue with Positive Growth)")
     stars = sku_merged[
-        (sku_merged["growth_pct"] > 0) & (sku_merged["rating"] >= rating_thresh)
+        sku_merged["growth_pct"] > 0
     ].nlargest(10, "revenue_latest")
 
     if len(stars):

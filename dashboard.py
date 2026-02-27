@@ -111,6 +111,12 @@ active_skus = sel_skus if sel_skus else all_skus
 
 filt = item_df[(item_df["brand_name"].isin(active_brands)) & (item_df["item_id"].isin(active_skus))]
 
+st.sidebar.markdown("---")
+if st.sidebar.button("Clear Filters", use_container_width=True):
+    st.query_params.clear()
+    st.cache_data.clear()
+    st.rerun()
+
 # ── Helper: format currency ─────────────────────────────────────────────────
 def fmt_inr(v):
     if abs(v) >= 1e7:
